@@ -16,6 +16,7 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Numeric.Units.Dimensional.LinearAlgebra.Vector
+                       Numeric.Units.Dimensional.LinearAlgebra.Matrix
                      --  Numeric.Units.Dimensional.LinearAlgebra
                      -- , Numeric.Units.Dimensional.LinearAlgebra.Matrix
                      -- , Numeric.Units.Dimensional.LinearAlgebra.Vector
