@@ -402,6 +402,12 @@ elemDiv = vZipWith (/)
 scaleVec :: Num a => Quantity d1 a -> Vec d2 n a -> Vec ((*) d1 d2) n a
 scaleVec x = vMap (x *)
 
+-- | Scale a vector by division. Each element of the vector is
+--   divided by the second argument.
+scaleVecInv :: Fractional a => Vec d1 n a -> Quantity d2 a -> Vec ((/) d1 d2) n a
+scaleVecInv v x = vMap (/ x) v
+
+
 -- TODO Check if used and useful?
 -- -- | Scale a vector by a dimensionless quantity. This avoids inflating
 -- --   the types for this common case.
@@ -487,10 +493,11 @@ vNorm v = coerceSafe $ sqrt $ dotProduct v v  -- O.norm
 -- >>> vNorm (vNormalize v) ~== (1.0 *~ one)
 -- True
 vNormalize :: forall d n a . RealFloat a => Vec d n a -> Vec DOne n a
-vNormalize v =  coerceSafe $ (_1 / vNorm v) `scaleVec` v
-  where
-    coerceSafe :: Vec ((*) (DOne / d) d) n a -> Vec DOne n a
-    coerceSafe = coerce
+vNormalize v = scaleVecInv v (vNorm v)
+-- vNormalize v =  coerceSafe $ (_1 / vNorm v) `scaleVec` v
+--   where
+--     coerceSafe :: Vec ((*) (DOne / d) d) n a -> Vec DOne n a
+--     coerceSafe = coerce
 
 -- | Negate a vector.
 vNegate :: (Num a) => Vec d n a -> Vec d n a
