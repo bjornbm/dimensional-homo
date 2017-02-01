@@ -63,15 +63,12 @@ import Numeric.Units.Dimensional.Coercion
 import qualified Orthogonals as O
 import qualified Prelude as P
 
-import Data.AEq
-
-instance (KnownDimension d, AEq a, Fractional a) => AEq (Quantity d a) where
-  x === y = (x /~ siUnit) === (y /~ siUnit)
-  x ~== y = (x /~ siUnit) ~== (y /~ siUnit)
-
 
 -- $setup
 -- >>> :set -XScopedTypeVariables
+-- >>> import qualified Data.AEq
+-- >>> let coerceD = coerce :: Quantity d a -> a
+-- >>> let (~==) = (\x y -> coerceD x Data.AEq.~== coerceD y) :: Data.AEq.AEq a => Quantity d a -> Quantity d a -> Bool
 
 
 -- Vector data type
