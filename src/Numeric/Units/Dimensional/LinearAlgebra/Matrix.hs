@@ -182,8 +182,7 @@ matMat (ListMat m) (ListMat m') = ListMat (O.matrix_matrix m (O.transposed m'))
 -- instance HMap (MulD, d) ds1 ds2 => Apply (ScaleV, d) ds1  ds2 where apply _ = undefined
 
 -- | Scale a matrix (multiply by a scalar).
-scaleMat :: (Num a)
-         => Quantity d1 a -> Mat d2 r c a -> Mat ((*) d1 d2) r c a
+scaleMat :: (Num a) => Quantity d1 a -> Mat d2 r c a -> Mat ((*) d1 d2) r c a
 scaleMat x = coerce . map (scaleVec x) . toRowVecs
 
 -- Addition and subtraction of matrices.
