@@ -1,0 +1,64 @@
+name:                dimensional-homo
+version:             0.1.0.0
+synopsis:            Initial project template from stack
+description:         Please see README.md
+homepage:            https://github.com/bjornbm/dimensional-homo#readme
+license:             BSD3
+license-file:        LICENSE
+author:              Bjorn Buckwalter
+maintainer:          bjorn@buckwalter.se
+copyright:           Copyright: (c) 2016 Bjorn Buckwalter
+category:            Web
+build-type:          Simple
+extra-source-files:  README.md
+cabal-version:       >=1.10
+
+library
+  hs-source-dirs:      src
+  exposed-modules:     Numeric.Units.Dimensional.LinearAlgebra.Vector
+                     --  Numeric.Units.Dimensional.LinearAlgebra
+                     -- , Numeric.Units.Dimensional.LinearAlgebra.Matrix
+                     -- , Numeric.Units.Dimensional.LinearAlgebra.Vector
+                     -- , Numeric.Units.Dimensional.LinearAlgebra.Operators
+  build-depends:       base >= 4.7 && < 5
+                     , dimensional
+                     , numeric-quest
+                     , numtype-dk
+                     , ieee
+
+  default-language:    Haskell2010
+
+-- executable dimensional-homo-exe
+--   hs-source-dirs:      app
+--   main-is:             Main.hs
+--   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+--   build-depends:       base
+--                      , dimensional-homo
+--   default-language:    Haskell2010
+
+-- test-suite dimensional-homo-test
+--   type:                exitcode-stdio-1.0
+--   hs-source-dirs:      test
+--   main-is:             Spec.hs
+--   build-depends:       base
+--                      , dimensional-homo
+--   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+--   default-language:    Haskell2010
+
+test-suite doctests
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      test
+  main-is:             DocTests.hs
+  build-depends:       base
+                     , dimensional-homo
+                     , doctest
+                     , Glob
+                     , QuickCheck
+                     , ieee
+                     -- , template-haskell
+  ghc-options:         -threaded
+  default-language:    Haskell2010
+
+source-repository head
+  type:     git
+  location: https://github.com/bjornbm/dimensional-homo
