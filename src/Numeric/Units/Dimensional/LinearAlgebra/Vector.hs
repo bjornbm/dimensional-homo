@@ -90,22 +90,19 @@ data V (n::Nat) q where
   RowsCols :: { rowsCols :: [Vec d n a] } -> V n (Quantity d a)  -- TODO Mat
   ColsRows :: { colsRows :: [Vec d n a] } -> V n (Quantity d a)  -- TODO Mat
 
-toListV :: V n q -> [q]
-toListV (V (ListVec qs)) = coerce qs
-toListV (Rows vs) = vs  -- TODO
-toListV (Cols vs) = vs  -- TODO
-toListV (RowsCols vs) = concatMap (toListV . V) vs  -- TODO
-toListV (ColsRows vs) = concatMap (toListV . V) vs  -- TODO
-
 
 instance Foldable (V n) where
   toList (V (ListVec qs)) = coerce qs
   toList (Rows vs) = vs  -- TODO
   toList (Cols vs) = vs  -- TODO
-  toList (RowsCols vs) = concatMap (toListV . V) vs  -- TODO
-  toList (ColsRows vs) = concatMap (toListV . V) vs  -- TODO
+  toList (RowsCols vs) = concatMap (toList . V) vs  -- TODO
+  toList (ColsRows vs) = concatMap (toList . V) vs  -- TODO
   -- toList = toListV
   foldr f x0 = foldr f x0 . F.toList
+
+
+toListV :: Vec d n a -> [Quantity d a]
+toListV = toListV
 
 
 -- Showing
@@ -116,7 +113,7 @@ instance (KnownDimension d, Show (Quantity d a), Num a) => Show (Vec d n a)
   where show = (\s -> "< " ++ s ++ " >")
              . intercalate ", "
              . map show
-             . toList . V
+             . toListV
 
 {-
 Vector Construction and Deconstruction
@@ -268,7 +265,7 @@ n2 = Proxy :: Proxy 2
 -- dimensional are more likely to already have NumTypes in scope than
 -- @HNat@s.
 vElemAt :: (KnownNat m, m + 1 <= n) => Proxy m -> Vec d n a -> Quantity d a
-vElemAt n = flip genericIndex (natVal n) . toList . V
+vElemAt n = flip genericIndex (natVal n) . toListV
 
 
 -- -- Homogenity
@@ -380,7 +377,7 @@ outside this module!
 
 -- | Map a function to the elements
 vMap :: (Quantity d1 a1 -> Quantity d2 a2) -> Vec d1 n a1 -> Vec d2 n a2
-vMap f = fromListUnsafe . map f . toList . V
+vMap f = fromListUnsafe . map f . toListV
 
 -- | Zip the numeric representation of the elements using the provided
 -- function. IMPORTANT: v1 v2 v3 must have the same length!
@@ -482,7 +479,7 @@ crossProduct (ListVec [a, b, c]) (ListVec [d, e, f]) = ListVec
 
 -- | Compute the sum of all elements in a homogenous vector.
 vSum :: (Num a) => Vec d n a -> Quantity d a
-vSum = sum . toList . V
+vSum = sum . toListV
 
 -- coerceQ :: (KnownDimension d1, KnownDimension d2, Fractional a) => Quantity d1 a -> Quantity d2 a
 -- coerceQ x = (x /~ siUnit) *~ siUnit
