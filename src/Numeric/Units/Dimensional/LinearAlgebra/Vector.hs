@@ -89,7 +89,10 @@ data V (n::Nat) q where
   Cols :: { cols :: [Vec d n a] } -> V c (Vec d n a)  -- TODO Mat
   RowsCols :: { rowsCols :: [Vec d n a] } -> V n (Quantity d a)  -- TODO Mat
   ColsRows :: { colsRows :: [Vec d n a] } -> V n (Quantity d a)  -- TODO Mat
+  BadV :: [b] -> V n b
 
+instance Functor (V n) where
+  fmap f (V v) = BadV $ fmap f $ toList (V v)
 
 instance Foldable (V n) where
   toList (V (ListVec qs)) = coerce qs
@@ -101,6 +104,7 @@ instance Foldable (V n) where
   foldr f x0 = foldr f x0 . F.toList
 
 
+-- | Convert a Vec to a list.
 toListV :: Vec d n a -> [Quantity d a]
 toListV = toListV
 
