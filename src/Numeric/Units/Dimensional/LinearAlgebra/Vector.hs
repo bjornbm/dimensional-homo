@@ -83,30 +83,32 @@ import qualified Prelude as P
 -- invariant.
 newtype Vec (d :: Dimension) (n :: Nat) a = ListVec [a] deriving (Eq)
 
-data V (n::Nat) q where
-  V :: { unV :: Vec d n a } -> V n (Quantity d a)
-  Rows :: { rows :: [Vec d n a] } -> V r (Vec d n a)  -- TODO Mat
-  Cols :: { cols :: [Vec d n a] } -> V c (Vec d n a)  -- TODO Mat
-  RowsCols :: { rowsCols :: [Vec d n a] } -> V n (Quantity d a)  -- TODO Mat
-  ColsRows :: { colsRows :: [Vec d n a] } -> V n (Quantity d a)  -- TODO Mat
-  BadV :: [b] -> V n b
+-- | `V` is a wrapper structure to provide Functor/Foldable/Traversable
+  -- instances for vector.
+  -- TODO `V` should be abstract and the only exposed interface (other than
+  -- the instances) should be `toV` and `fromV`.
+newtype V (n::Nat) q = V [q]
 
-instance Functor (V n) where
-  fmap f (V v) = BadV $ fmap f $ toList (V v)
+toV :: Vec d n a -> V n (Quantity d a)
+toV = coerce
+
+fromV :: V n (Quantity d a) -> Vec d n a
+fromV = coerce
 
 instance Foldable (V n) where
-  toList (V (ListVec qs)) = coerce qs
-  toList (Rows vs) = vs  -- TODO
-  toList (Cols vs) = vs  -- TODO
-  toList (RowsCols vs) = concatMap (toList . V) vs  -- TODO
-  toList (ColsRows vs) = concatMap (toList . V) vs  -- TODO
-  -- toList = toListV
+  toList (V xs) = coerce xs
   foldr f x0 = foldr f x0 . F.toList
+
+instance Functor (V n) where
+  fmap f = V . fmap f . toList
+
+instance Traversable (V n) where
+  traverse f = fmap V . traverse f . toList
 
 
 -- | Convert a Vec to a list.
 toListV :: Vec d n a -> [Quantity d a]
-toListV = toListV
+toListV = toList . toV
 
 
 -- Showing
@@ -387,7 +389,7 @@ vMap f = fromListUnsafe . map f . toListV
 -- function. IMPORTANT: v1 v2 v3 must have the same length!
 vZipWith :: (Quantity d1 a1 -> Quantity d2 a2 -> Quantity d3 a3)
          -> Vec d1 n a1 -> Vec d2 n a2 -> Vec d3 n a3
-vZipWith f v1 v2 = fromListUnsafe $ zipWith f (toList $ V v1) (toList $ V v2)
+vZipWith f v1 v2 = fromListUnsafe $ zipWith f (toListV v1) (toListV v2)
 
 
 -- Elementwise binary operators

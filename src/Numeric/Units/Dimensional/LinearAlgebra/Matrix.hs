@@ -10,6 +10,7 @@
 
 module Numeric.Units.Dimensional.LinearAlgebra.Matrix where
 
+import Data.Foldable
 import Data.List (intercalate)
 import Data.Proxy
 import GHC.TypeLits hiding (type (*))
@@ -29,9 +30,57 @@ import qualified Prelude as P
 -- type signatures of matrices.
 newtype Mat (d :: Dimension) (r :: Nat) (c:: Nat) a = ListMat [[a]] deriving Eq
 
-toRowVecs :: Mat d r c a -> [Vec d r a]
+newtype M (r :: Nat) (c :: Nat) q = M [[q]]
+
+toM :: Mat d r c a -> M r c (Quantity d a)
+toM = coerce
+fromM :: M r c (Quantity d a) -> Mat d r c a
+fromM = coerce
+
+newtype Rows (r :: Nat) v = Rows [v]
+toRows :: Mat d r c a -> Rows r (Vec d c a)
+toRows = coerce
+fromRows :: Rows r (Vec d c a) -> Mat d r c a
+fromRows = coerce
+instance Foldable (Rows r) where
+  toList = coerce
+  foldr f x0 = foldr f x0 . toList
+instance Functor (Rows r) where
+  fmap f = Rows . fmap f . toList
+instance Traversable (Rows r) where
+  traverse f = fmap Rows . traverse f . toList
+
+newtype Cols (c :: Nat) v = Cols [v]
+toCols :: forall d r c a . Mat d r c a -> Cols c (Vec d c a)
+toCols (ListMat rs) = coerce $ O.transposed rs
+fromCols :: forall d r c a . Cols c (Vec d c a) -> Mat d r c a
+fromCols (Cols cs) = coerce $ O.transposed (coerce cs :: [[a]])
+instance Foldable (Cols c) where
+  toList = coerce
+  foldr f x0 = foldr f x0 . toList
+instance Functor (Cols c) where
+  fmap f = Cols . fmap f . toList
+instance Traversable (Cols c) where
+  traverse f = fmap Cols . traverse f . toList
+
+newtype RowsCols (r :: Nat) (c :: Nat) q = RowsCols [q]
+toRowsCols :: forall d r c a . Mat d r c a -> RowsCols r c (Quantity d a)
+-- toRowsCols (ListMat rs) = coerce $ concat rs
+toRowsCols = RowsCols . concatMap toListV . toList . toRows
+-- fromRowsCols :: forall d r c a . RowsCols r c (Vec d c a) -> Mat d r c a
+-- fromRowsCols (RowsCols qs) = coerce $ O.transposed (coerce cs :: [[a]])
+instance Foldable (RowsCols r c) where
+  toList = coerce
+  foldr f x0 = foldr f x0 . toList
+instance Functor (RowsCols r c) where
+  fmap f = RowsCols . fmap f . toList
+instance Traversable (RowsCols r c) where
+  traverse f = fmap RowsCols . traverse f . toList
+
+
+toRowVecs :: Mat d r c a -> [Vec d c a]
 toRowVecs = map fromListUnsafe . coerce
-toRowLists = map toList . toRowVecs
+toRowLists = map toListV . toRowVecs
 
 -- Showing
 -- -------
