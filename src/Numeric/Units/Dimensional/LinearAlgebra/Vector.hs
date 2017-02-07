@@ -155,28 +155,28 @@ vTail (ListVec xs) = ListVec (tail xs)  -- vTransformUnsafe tail
 -- prop> \x y -> fromTuple (x *~ meter, y *~ kilo meter) == vCons (x *~ meter) (vSing (y *~ kilo meter))
 -- prop> \(x::Double) (y::Double) -> let t = (x *~ meter, y *~ kilo meter) in toTuple (fromTuple t) == t
 -- prop> \(x::Double) (y::Double) (z::Double) -> let t = (x *~ meter, y *~ kilo meter, z *~ centi meter) in toTuple (fromTuple t) == t
-class FromTuple t where
-  type V t :: *
-  fromTuple :: t -> V t
+class FromTupleC t where
+  type FromTuple t :: *
+  fromTuple :: t -> FromTuple t
 
-instance FromTuple (Quantity d a, Quantity d a) where
-  type V (Quantity d a, Quantity d a) = Vec d 2 a
+instance FromTupleC (Quantity d a, Quantity d a) where
+  type FromTuple (Quantity d a, Quantity d a) = Vec d 2 a
   fromTuple (x,y) = vCons x $ vSing y
 
-instance FromTuple (Quantity d a, Quantity d a, Quantity d a) where
-  type V (Quantity d a, Quantity d a, Quantity d a) = Vec d 3 a
+instance FromTupleC (Quantity d a, Quantity d a, Quantity d a) where
+  type FromTuple (Quantity d a, Quantity d a, Quantity d a) = Vec d 3 a
   fromTuple (x,y,z) = vCons x $ vCons y $ vSing z
 
-class ToTuple d n a where
-  type T d n a :: *
-  toTuple :: Vec d n a -> T d n a
+class ToTupleC d n a where
+  type ToTuple d n a :: *
+  toTuple :: Vec d n a -> ToTuple d n a
 
-instance ToTuple d 2 a where
-  type T d 2 a = (Quantity d a, Quantity d a)
+instance ToTupleC d 2 a where
+  type ToTuple d 2 a = (Quantity d a, Quantity d a)
   toTuple v = (vElemAt n0 v, vElemAt n1 v)
 
-instance ToTuple d 3 a where
-  type T d 3 a = (Quantity d a, Quantity d a, Quantity d a)
+instance ToTupleC d 3 a where
+  type ToTuple d 3 a = (Quantity d a, Quantity d a, Quantity d a)
   toTuple v = (vElemAt n0 v, vElemAt n1 v, vElemAt n2 v)
 
 
