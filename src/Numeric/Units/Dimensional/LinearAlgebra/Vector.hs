@@ -42,6 +42,7 @@ vectors/matrices.
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE GADTs #-}
 
 module Numeric.Units.Dimensional.LinearAlgebra.Vector
   {- ( Vec
@@ -51,6 +52,7 @@ module Numeric.Units.Dimensional.LinearAlgebra.Vector
 
 
 
+import Data.Foldable as F hiding (sum)
 
 import Data.Functor.Identity
 import Data.List (intercalate, genericIndex, genericLength, genericTake)
@@ -81,6 +83,30 @@ import qualified Prelude as P
 -- invariant.
 newtype Vec (d :: Dimension) (n :: Nat) a = ListVec [a] deriving (Eq)
 
+data V (n::Nat) q where
+  V :: { unV :: Vec d n a } -> V n (Quantity d a)
+  Rows :: { rows :: [Vec d n a] } -> V r (Vec d n a)  -- TODO Mat
+  Cols :: { cols :: [Vec d n a] } -> V c (Vec d n a)  -- TODO Mat
+  RowsCols :: { rowsCols :: [Vec d n a] } -> V n (Quantity d a)  -- TODO Mat
+  ColsRows :: { colsRows :: [Vec d n a] } -> V n (Quantity d a)  -- TODO Mat
+
+toListV :: V n q -> [q]
+toListV (V (ListVec qs)) = coerce qs
+toListV (Rows vs) = vs  -- TODO
+toListV (Cols vs) = vs  -- TODO
+toListV (RowsCols vs) = concatMap (toListV . V) vs  -- TODO
+toListV (ColsRows vs) = concatMap (toListV . V) vs  -- TODO
+
+
+instance Foldable (V n) where
+  toList (V (ListVec qs)) = coerce qs
+  toList (Rows vs) = vs  -- TODO
+  toList (Cols vs) = vs  -- TODO
+  toList (RowsCols vs) = concatMap (toListV . V) vs  -- TODO
+  toList (ColsRows vs) = concatMap (toListV . V) vs  -- TODO
+  -- toList = toListV
+  foldr f x0 = foldr f x0 . F.toList
+
 
 -- Showing
 -- -------
@@ -90,7 +116,7 @@ instance (KnownDimension d, Show (Quantity d a), Num a) => Show (Vec d n a)
   where show = (\s -> "< " ++ s ++ " >")
              . intercalate ", "
              . map show
-             . toList
+             . toList . V
 
 {-
 Vector Construction and Deconstruction
@@ -242,7 +268,7 @@ n2 = Proxy :: Proxy 2
 -- dimensional are more likely to already have NumTypes in scope than
 -- @HNat@s.
 vElemAt :: (KnownNat m, m + 1 <= n) => Proxy m -> Vec d n a -> Quantity d a
-vElemAt n = flip genericIndex (natVal n) . toList
+vElemAt n = flip genericIndex (natVal n) . toList . V
 
 
 -- -- Homogenity
@@ -260,9 +286,9 @@ vElemAt n = flip genericIndex (natVal n) . toList
 -- List conversions
 -- ================
 
--- | Convert a Vec to a list.
-toList :: Vec d n a -> [Quantity d a]
-toList = coerce
+-- -- | Convert a Vec to a list.
+-- toList :: Vec d n a -> [Quantity d a]
+-- toList = coerce
 
 -- | Create a Vec from a list. There is no guarantee that the list will
 --   have the statically expected length, and an incorrect list length
@@ -354,13 +380,13 @@ outside this module!
 
 -- | Map a function to the elements
 vMap :: (Quantity d1 a1 -> Quantity d2 a2) -> Vec d1 n a1 -> Vec d2 n a2
-vMap f = fromListUnsafe . map f . toList
+vMap f = fromListUnsafe . map f . toList . V
 
 -- | Zip the numeric representation of the elements using the provided
 -- function. IMPORTANT: v1 v2 v3 must have the same length!
 vZipWith :: (Quantity d1 a1 -> Quantity d2 a2 -> Quantity d3 a3)
          -> Vec d1 n a1 -> Vec d2 n a2 -> Vec d3 n a3
-vZipWith f v1 v2 = fromListUnsafe $ zipWith f (toList v1) (toList v2)
+vZipWith f v1 v2 = fromListUnsafe $ zipWith f (toList $ V v1) (toList $ V v2)
 
 
 -- Elementwise binary operators
@@ -456,7 +482,7 @@ crossProduct (ListVec [a, b, c]) (ListVec [d, e, f]) = ListVec
 
 -- | Compute the sum of all elements in a homogenous vector.
 vSum :: (Num a) => Vec d n a -> Quantity d a
-vSum = sum . toList
+vSum = sum . toList . V
 
 -- coerceQ :: (KnownDimension d1, KnownDimension d2, Fractional a) => Quantity d1 a -> Quantity d2 a
 -- coerceQ x = (x /~ siUnit) *~ siUnit
