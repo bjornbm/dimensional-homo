@@ -325,7 +325,8 @@ outside this module!
 
 -- | Map a function to the elements
 vMap :: (Quantity d1 a1 -> Quantity d2 a2) -> Vec d1 n a1 -> Vec d2 n a2
-vMap f = fromListUnsafe . map f . toListV
+vMap f = fromElems . fmap f . toElems
+
 
 -- | Zip the numeric representation of the elements using the provided
 -- function. IMPORTANT: v1 v2 v3 must have the same length!
