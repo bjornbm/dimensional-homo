@@ -69,6 +69,14 @@ rowHead (ListMat vs) = ListVec (head vs)
 rowTail :: Mat d r c a -> Mat d (r-1) c a
 rowTail (ListMat vs) = ListMat (tail vs)
 
+-- | Return the first row of the matrix.
+colHead :: Mat d r c a -> Vec d r a
+colHead (ListMat vs) = ListVec (map head vs)
+
+-- | Return the first row of the matrix.
+colTail :: Mat d r c a -> Mat d r (c-1) a
+colTail (ListMat vs) = ListMat (map tail vs)
+
 
 -- Folding and traversing
 -- ======================
