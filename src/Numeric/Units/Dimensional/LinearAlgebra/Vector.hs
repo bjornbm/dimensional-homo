@@ -335,9 +335,9 @@ forElems = flip mapElems
 
 -- | Zip the numeric representation of the elements using the provided
 -- function. IMPORTANT: v1 v2 v3 must have the same length!
-vZipWith :: (Quantity d1 a1 -> Quantity d2 a2 -> Quantity d3 a3)
-         -> Vec d1 n a1 -> Vec d2 n a2 -> Vec d3 n a3
-vZipWith f v1 v2 = fromListUnsafe $ zipWith f (listElems v1) (listElems v2)
+zipVecsWith :: (Quantity d1 a1 -> Quantity d2 a2 -> Quantity d3 a3)
+            -> Vec d1 n a1 -> Vec d2 n a2 -> Vec d3 n a3
+zipVecsWith f v1 v2 = fromListUnsafe $ zipWith f (listElems v1) (listElems v2)
 
 
 -- Elementwise binary operators
@@ -346,26 +346,26 @@ vZipWith f v1 v2 = fromListUnsafe $ zipWith f (listElems v1) (listElems v2)
 -- | Elementwise addition of vectors. The vectors must have the
 --   same size and element types.
 elemAdd :: Num a => Vec d n a -> Vec d n a -> Vec d n a
-elemAdd = vZipWith (+)
+elemAdd = zipVecsWith (+)
 
 -- | Elementwise subraction of vectors. The vectors must have the
 --   same size and element types.
 elemSub :: Num a => Vec d n a -> Vec d n a -> Vec d n a
-elemSub = vZipWith (-)
+elemSub = zipVecsWith (-)
 
 
 -- | Elementwise multiplication of vectors.
 --   Multiplies each element i of the first argument vector by the
 --   corresponding element of the second argument.
 elemMul :: Num a => Vec d1 n a -> Vec d2 n a -> Vec ((*) d1 d2) n a
-elemMul = vZipWith (*)
+elemMul = zipVecsWith (*)
 
 
 -- | Elementwise division of vectors
 --   Divides each element i of the first argument vector by the
 --   corresponding element of the second argument.
 elemDiv :: Fractional a => Vec d1 n a -> Vec d2 n a -> Vec (d1 / d2) n a
-elemDiv = vZipWith (/)
+elemDiv = zipVecsWith (/)
 
 
 -- Scaling of vectors
@@ -410,7 +410,7 @@ scaleVecInv v = forElems v . flip (/)
 -- >>> dotProduct v1 v2 == x1 * y1 + x2 * y2
 -- True
 dotProduct :: (Num a) => Vec d1 n a -> Vec d2 n a -> Quantity ((*) d1 d2) a
-dotProduct v1 v2 = vSum $ vZipWith (*) v1 v2
+dotProduct v1 v2 = sumElems $ zipVecsWith (*) v1 v2
 
 
 -- Cross product
@@ -441,17 +441,17 @@ crossProduct (ListVec [a, b, c]) (ListVec [d, e, f]) = ListVec
 -- =============
 
 -- | Compute the sum of all elements in a homogenous vector.
-vSum :: (Num a) => Vec d n a -> Quantity d a
-vSum = sum . listElems
+sumElems :: (Num a) => Vec d n a -> Quantity d a
+sumElems = sum . listElems
 
 -- | Compute the vector norm.
 --
 -- >>> let v = m <:. m where m = 1 *~ meter
 -- >>> :set -XFlexibleContexts
--- >>> vNorm v == sqrt (v `dotProduct` v)
+-- >>> norm v == sqrt (v `dotProduct` v)
 -- True
-vNorm :: (RealFloat a) => Vec d n a -> Quantity d a
-vNorm v = coerceSafe $ sqrt $ dotProduct v v  -- O.norm
+norm :: (RealFloat a) => Vec d n a -> Quantity d a
+norm v = coerceSafe $ sqrt $ dotProduct v v  -- O.norm
   where
     --coerceSafe :: Quantity (Sqrt ((*) d d)) a -> Quantity d a  TODO next dimensional release
     coerceSafe :: Quantity (Root ((*) d d) Pos2) a -> Quantity d a
@@ -461,17 +461,17 @@ vNorm v = coerceSafe $ sqrt $ dotProduct v v  -- O.norm
 --
 -- >>> let m = 1 *~ meter
 -- >>> let v = m <:. m
--- >>> vNormalize v == (_1 / vNorm v) `scaleVec` v
+-- >>> normalize v == (_1 / norm v) `scaleVec` v
 -- True
--- >>> vNormalize v == (vNorm v ^ neg1) `scaleVec` v
+-- >>> normalize v == (norm v ^ neg1) `scaleVec` v
 -- True
--- >>> let m = 1 *~ meter in vNormalize (vSing m)
+-- >>> let m = 1 *~ meter in normalize (vSing m)
 -- < 1.0 >
--- >>> vNorm (vNormalize v) ~== (1.0 *~ one)
+-- >>> norm (normalize v) ~== (1.0 *~ one)
 -- True
-vNormalize :: forall d n a . RealFloat a => Vec d n a -> Vec DOne n a
-vNormalize v = scaleVecInv v (vNorm v)
+normalize :: forall d n a . RealFloat a => Vec d n a -> Vec DOne n a
+normalize v = scaleVecInv v (norm v)
 
 -- | Negate a vector.
-vNegate :: (Num a) => Vec d n a -> Vec d n a
-vNegate = mapElems negate
+negateVec :: (Num a) => Vec d n a -> Vec d n a
+negateVec = mapElems negate
