@@ -412,16 +412,10 @@ scaleVecInv v = forElems v . flip (/)
 dotProduct :: (Num a) => Vec d1 n a -> Vec d2 n a -> Quantity ((*) d1 d2) a
 dotProduct v1 v2 = vSum $ vZipWith (*) v1 v2
 
-{-
-Cross product
-=============
-Vector cross product is only applicable to vectors with three
-elements (I believe). The constraints for the instance are brute-force.
-It is slightly disconcerting that nothing prevents defining additional
-nstances...
--}
 
--- | Compute the cross product of two vectors.
+-- Cross product
+-- =============
+-- | Compute the (three element) cross product of two vectors.
 --
 -- >>> let v = 5 *~ meter <: 1 *~ meter <:. 2 *~ meter
 -- >>> crossProduct v v == ListVec [0,0,0]
