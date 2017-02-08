@@ -181,7 +181,7 @@ vTail (ListVec xs) = ListVec (tail xs)  -- vTransformUnsafe tail
 
 -- |
 --
--- prop> \x y -> fromTuple (x *~ meter, y *~ kilo meter) == vCons (x *~ meter) (vSing (y *~ kilo meter))
+-- prop> \x y -> fromTuple (x *~ meter, y *~ kilo meter) == x *~ meter <:. y *~ kilo meter
 -- prop> \(x::Double) (y::Double) -> let t = (x *~ meter, y *~ kilo meter) in toTuple (fromTuple t) == t
 -- prop> \(x::Double) (y::Double) (z::Double) -> let t = (x *~ meter, y *~ kilo meter, z *~ centi meter) in toTuple (fromTuple t) == t
 class FromTupleC t where
@@ -250,7 +250,7 @@ fromListUnsafe = coerce
 --   longer than the expected length the list will be truncated.
 --
 -- >>> let x = 1 *~ meter
--- >>> fromListPad x [] `asTypeOf` vCons x (vSing x)
+-- >>> fromListPad x [] `asTypeOf` (x <:. x)
 -- < 1.0 m, 1.0 m >
 fromListPad :: forall d n a . KnownNat n
             => Quantity d a -> [Quantity d a] -> Vec d n a
@@ -265,13 +265,13 @@ fromListPad x xs = fromListUnsafe $ genericTake n $ xs ++ repeat x
 -- >>> let x = 1 *~ meter
 -- >>> fromListZero [x] `asTypeOf` vSing x
 -- < 1.0 m >
--- >>> fromListZero [x,x] `asTypeOf` vCons x (vSing x)
+-- >>> fromListZero [x,x] `asTypeOf` (x <:. x)
 -- < 1.0 m, 1.0 m >
--- >>> fromListZero [x] `asTypeOf` vCons x (vSing x)
+-- >>> fromListZero [x] `asTypeOf` (x <:. x)
 -- < 1.0 m, 0.0 m >
 -- >>> fromListZero [x,x] `asTypeOf` vSing x
 -- < 1.0 m >
--- >>> fromListZero [] `asTypeOf` vCons x (vSing x)
+-- >>> fromListZero [] `asTypeOf` (x <:. x)
 -- < 0.0 m, 0.0 m >
 fromListZero :: (KnownNat n, Num a) => [Quantity d a] -> Vec d n a
 fromListZero = fromListPad _0
@@ -281,9 +281,9 @@ fromListZero = fromListPad _0
 -- >>> let x = 1 *~ meter
 -- >>> fromListM [x] `asTypeOf` Just (vSing x)
 -- Just < 1.0 m >
--- >>> fromListM [x,x] `asTypeOf` Just (vCons x (vSing x))
+-- >>> fromListM [x,x] `asTypeOf` Just (x <:. x)
 -- Just < 1.0 m, 1.0 m >
--- >>> fromListM [x] `asTypeOf` Just (vCons x (vSing x))
+-- >>> fromListM [x] `asTypeOf` Just (x  <:. x)
 -- Nothing
 -- >>> fromListM [x,x] `asTypeOf` Just (vSing x)
 -- Nothing
@@ -303,9 +303,9 @@ fromListM xs | len == n  = return $ fromListUnsafe xs
 -- >>> let x = 1 *~ meter
 -- >>> fromListErr [x] `asTypeOf` vSing x
 -- < 1.0 m >
--- >>> fromListErr [x,x] `asTypeOf` vCons x (vSing x)
+-- >>> fromListErr [x,x] `asTypeOf` (x  <:. x)
 -- < 1.0 m, 1.0 m >
--- >>> fromListErr [x] `asTypeOf` vCons x (vSing x)
+-- >>> fromListErr [x] `asTypeOf` (x  <:. x)
 -- < *** Exception: List length (1) does not equal expected vector size (2)
 -- >>> fromListErr [x,x] `asTypeOf` vSing x
 -- < *** Exception: List length (2) does not equal expected vector size (1)
@@ -374,9 +374,9 @@ elemDiv = vZipWith (/)
 -- | Scale a vector by multiplication. Each element of the vector is
 --   multiplied by the first argument.
 --
--- >>> let x1 = 4 *~ meter;  x2 = 2 *~ meter;  v1 = vCons x1 (vSing x2)
--- >>> let y = 2 *~ second;
--- >>> let z1 = 8 *~ (meter*second);  z2 = 4 *~ (meter*second);  v2 = vCons z1 (vSing z2)
+-- >>> let v1 = 4 *~ meter <:. 2 *~ meter
+-- >>> let y  = 2 *~ second
+-- >>> let v2 = 8 *~ (meter*second) <:. 4 *~ (meter*second)
 -- >>> scaleVec y v1 == v2
 -- True
 scaleVec :: Num a => Quantity d1 a -> Vec d2 n a -> Vec ((*) d1 d2) n a
@@ -385,9 +385,9 @@ scaleVec = mapElems . (*)
 -- | Scale a vector by division. Each element of the vector is
 --   divided by the second argument.
 --
--- >>> let x1 = 4 *~ meter;  x2 = 2 *~ meter;  v1 = vCons x1 (vSing x2)
--- >>> let y = 2 *~ second;
--- >>> let z1 = 2 *~ (meter/second);  z2 = 1 *~ (meter/second);  v2 = z1 <:. z2
+-- >>> let v1 = 4 *~ meter <:. 2 *~ meter
+-- >>> let y  = 2 *~ second
+-- >>> let v2 = 2 *~ (meter/second) <:. 1 *~ (meter/second)
 -- >>> scaleVecInv v1 y == v2
 -- True
 scaleVecInv :: Fractional a => Vec d1 n a -> Quantity d2 a -> Vec ((/) d1 d2) n a
@@ -405,8 +405,8 @@ scaleVecInv v = forElems v . flip (/)
 -- ===========
 -- | Compute the dot product of two vectors.
 --
--- >>> let x1 = 1 *~ meter;  x2 = 2 *~ meter;  v1 = vCons x1 (vSing x2)
--- >>> let y1 = 3 *~ second; y2 = 4 *~ second; v2 = vCons y1 (vSing y2)
+-- >>> let x1 = 1 *~ meter;  x2 = 2 *~ meter;  v1 = x1 <:. x2
+-- >>> let y1 = 3 *~ second; y2 = 4 *~ second; v2 = y1 <:. y2
 -- >>> dotProduct v1 v2 == x1 * y1 + x2 * y2
 -- True
 dotProduct :: (Num a) => Vec d1 n a -> Vec d2 n a -> Quantity ((*) d1 d2) a
@@ -423,8 +423,8 @@ nstances...
 
 -- | Compute the cross product of two vectors.
 --
--- >>> let x1 = 1 *~ meter; x2 = 2 *~ meter; v1 = x2 <: x1 <:. x2
--- >>> crossProduct v1 v1 == ListVec [0,0,0]
+-- >>> let v = 5 *~ meter <: 1 *~ meter <:. 2 *~ meter
+-- >>> crossProduct v v == ListVec [0,0,0]
 -- True
 --
 -- >>> :{
@@ -450,15 +450,9 @@ crossProduct (ListVec [a, b, c]) (ListVec [d, e, f]) = ListVec
 vSum :: (Num a) => Vec d n a -> Quantity d a
 vSum = sum . listElems
 
--- coerceQ :: (KnownDimension d1, KnownDimension d2, Fractional a) => Quantity d1 a -> Quantity d2 a
--- coerceQ x = (x /~ siUnit) *~ siUnit
--- coerceV :: Vec d1 n a -> Vec d2 n a
--- coerceV (ListVec xs) = ListVec xs
-
 -- | Compute the vector norm.
 --
--- >>> let m = 1 *~ meter
--- >>> let v = vCons m (vSing m)
+-- >>> let v = m <:. m where m = 1 *~ meter
 -- >>> :set -XFlexibleContexts
 -- >>> vNorm v == sqrt (v `dotProduct` v)
 -- True
@@ -472,7 +466,7 @@ vNorm v = coerceSafe $ sqrt $ dotProduct v v  -- O.norm
 -- | Normalize a vector. The vector must be homogeneous.
 --
 -- >>> let m = 1 *~ meter
--- >>> let v = vCons m (vSing m)
+-- >>> let v = m <:. m
 -- >>> vNormalize v == (_1 / vNorm v) `scaleVec` v
 -- True
 -- >>> vNormalize v == (vNorm v ^ neg1) `scaleVec` v
@@ -483,10 +477,6 @@ vNorm v = coerceSafe $ sqrt $ dotProduct v v  -- O.norm
 -- True
 vNormalize :: forall d n a . RealFloat a => Vec d n a -> Vec DOne n a
 vNormalize v = scaleVecInv v (vNorm v)
--- vNormalize v =  coerceSafe $ (_1 / vNorm v) `scaleVec` v
---   where
---     coerceSafe :: Vec ((*) (DOne / d) d) n a -> Vec DOne n a
---     coerceSafe = coerce
 
 -- | Negate a vector.
 vNegate :: (Num a) => Vec d n a -> Vec d n a
