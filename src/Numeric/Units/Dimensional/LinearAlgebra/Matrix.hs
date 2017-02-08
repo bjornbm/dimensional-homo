@@ -36,7 +36,7 @@ newtype Mat (d :: Dimension) (r :: Nat) (c:: Nat) a = ListMat [[a]] deriving Eq
 -- fromM :: M r c (Quantity d a) -> Mat d r c a
 -- fromM = coerce
 
--- | Newtype for representing the matrix as a list of row vectors.
+-- | Newtype for representing a matrix as a list of row vectors.
   --
   --  [ x11 x12 x13 ]      [ < x11 x12 x13>
   --  [ x21 x22 x23 ]  =>  , < x21 x22 x23>
@@ -55,7 +55,7 @@ instance Functor (Rows r) where
 instance Traversable (Rows r) where
   traverse f = fmap Rows . traverse f . toList
 
--- | Newtype for representing the matrix as a list of column vectors.
+-- | Newtype for representing a matrix as a list of column vectors.
   --
   --  [ x11 x12 x13 ]      [ < x11 x21 x31>
   --  [ x21 x22 x23 ]  =>  , < x12 x22 x32>
@@ -74,7 +74,7 @@ instance Functor (Cols c) where
 instance Traversable (Cols c) where
   traverse f = fmap Cols . traverse f . toList
 
--- | Newtype for representing the matrix as a list elements, with rows
+-- | Newtype for representing a matrix as a list elements, with rows
   -- having greater cardinality than columns.
   --
   --  [ x11 x12 x13 ]      [ x11 , x12 , x13
@@ -94,7 +94,7 @@ instance Functor (RowsCols r c) where
 instance Traversable (RowsCols r c) where
   traverse f (RowsCols rs) = fmap RowsCols $ traverse (traverse f) rs
 
--- | Newtype for representing the matrix as a list elements, with columns
+-- | Newtype for representing a matrix as a list elements, with columns
   -- having greater cardinality than rows.
   --
   --  [ x11 x12 x13 ]      [ x11 , x21 , x31

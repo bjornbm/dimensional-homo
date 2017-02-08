@@ -87,7 +87,7 @@ newtype Vec (d :: Dimension) (n :: Nat) a = ListVec [a] deriving (Eq)
   -- instances for vector.
   -- TODO `V` should be abstract and the only exposed interface (other than
   -- the instances) should be `toV` and `fromV`.
-newtype V (n::Nat) q = V [q]
+newtype V (n::Nat) q = V [q] deriving (Eq)
 
 toV :: Vec d n a -> V n (Quantity d a)
 toV = coerce
