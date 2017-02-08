@@ -83,32 +83,32 @@ import qualified Prelude as P
 -- invariant.
 newtype Vec (d :: Dimension) (n :: Nat) a = ListVec [a] deriving (Eq)
 
--- | `V` is a wrapper structure to provide Functor/Foldable/Traversable
+-- | `Elems` is a wrapper to provide Functor/Foldable/Traversable
   -- instances for vector.
-  -- TODO `V` should be abstract and the only exposed interface (other than
+  -- TODO `Elems` should be abstract and the only exposed interface (other than
   -- the instances) should be `toV` and `fromV`.
-newtype V (n::Nat) q = V [q] deriving (Eq)
+newtype Elems (n::Nat) q = Elems [q] deriving (Eq)
 
-toV :: Vec d n a -> V n (Quantity d a)
-toV = coerce
+toElems :: Vec d n a -> Elems n (Quantity d a)
+toElems = coerce
 
-fromV :: V n (Quantity d a) -> Vec d n a
-fromV = coerce
+fromElems :: Elems n (Quantity d a) -> Vec d n a
+fromElems = coerce
 
-instance Foldable (V n) where
-  toList (V xs) = coerce xs
+instance Foldable (Elems n) where
+  toList (Elems xs) = coerce xs
   foldr f x0 = foldr f x0 . F.toList
 
-instance Functor (V n) where
-  fmap f = V . fmap f . toList
+instance Functor (Elems n) where
+  fmap f = Elems . fmap f . toList
 
-instance Traversable (V n) where
-  traverse f = fmap V . traverse f . toList
+instance Traversable (Elems n) where
+  traverse f = fmap Elems . traverse f . toList
 
 
 -- | Convert a Vec to a list.
 toListV :: Vec d n a -> [Quantity d a]
-toListV = toList . toV
+toListV = toList . toElems
 
 
 -- Showing

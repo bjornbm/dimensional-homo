@@ -42,7 +42,7 @@ newtype Mat (d :: Dimension) (r :: Nat) (c:: Nat) a = ListMat [[a]] deriving Eq
   --  [ x21 x22 x23 ]  =>  , < x21 x22 x23>
   --  [ x31 x32 x33 ]      , < x31 x32 x33> ]
   --
-newtype Rows (r :: Nat) v = Rows [v]
+newtype Rows (r :: Nat) v = Rows [v] deriving (Eq)
 toRows :: Mat d r c a -> Rows r (Vec d c a)
 toRows = coerce
 fromRows :: Rows r (Vec d c a) -> Mat d r c a
@@ -61,7 +61,7 @@ instance Traversable (Rows r) where
   --  [ x21 x22 x23 ]  =>  , < x12 x22 x32>
   --  [ x31 x32 x33 ]      , < x13 x22 x33> ]
   --
-newtype Cols (c :: Nat) v = Cols [v]
+newtype Cols (c :: Nat) v = Cols [v] deriving (Eq)
 toCols :: forall d r c a . Mat d r c a -> Cols c (Vec d c a)
 toCols (ListMat rs) = coerce $ O.transposed rs
 fromCols :: forall d r c a . Cols c (Vec d c a) -> Mat d r c a
@@ -81,7 +81,7 @@ instance Traversable (Cols c) where
   --  [ x21 x22 x23 ]  =>  , x21 , x22 , x23
   --  [ x31 x32 x33 ]      , x31 , x32 , x33> ]
   --
-newtype RowsCols (r :: Nat) (c :: Nat) q = RowsCols [[q]]
+newtype RowsCols (r :: Nat) (c :: Nat) q = RowsCols [[q]] deriving (Eq)
 toRowsCols :: forall d r c a . Mat d r c a -> RowsCols r c (Quantity d a)
 toRowsCols = RowsCols . map toListV . toList . toRows
 fromRowsCols :: forall d r c a . RowsCols r c (Quantity d a) -> Mat d r c a
@@ -101,7 +101,7 @@ instance Traversable (RowsCols r c) where
   --  [ x21 x22 x23 ]  =>  , x12 , x22 , x32
   --  [ x31 x32 x33 ]      , x13 , x22 , x33 ]
   --
-newtype ColsRows (r :: Nat) (c :: Nat) q = ColsRows [[q]]
+newtype ColsRows (r :: Nat) (c :: Nat) q = ColsRows [[q]] deriving (Eq)
 toColsRows :: forall d r c a . Mat d r c a -> ColsRows r c (Quantity d a)
 toColsRows = ColsRows . map toListV . toList . toCols
 fromColsRows :: forall d r c a . ColsRows r c (Quantity d a) -> Mat d r c a
