@@ -22,18 +22,28 @@ import qualified Orthogonals as O
 import qualified Prelude as P
 
 
+-- $setup
+-- >>> :set -XScopedTypeVariables
+-- >>> import qualified Data.AEq
+-- >>> import Numeric.Units.Dimensional.LinearAlgebra.Operators
+-- >>> let coerceD = coerce :: Quantity d a -> a
+-- >>> let (~==) = (\x y -> coerceD x Data.AEq.~== coerceD y) :: Data.AEq.AEq a => Quantity d a -> Quantity d a -> Bool
+-- >>> let v1 = _1 <:. _2
+-- >>> let v2 = _3 <:. _4
+-- >>> let m  = v1 |:. v2
+
 -- | A matrix is a list of rows (which in turn are lists). The matrix construction
 -- functions available (i.e. 'consRow') guarantee that matrices are well-formed
 -- (each row has the same number of elements). That a matrix is a list of rows as
 -- opposed to a list of columns is an implementation detail that we try to not leak
 -- through the API.
-newtype Mat (d :: Dimension) (r :: Nat) (c:: Nat) a = ListMat [[a]] deriving Eq
+newtype Mat (d :: Dimension) (r :: Nat) (c:: Nat) a = ListMat [[a]] deriving (Eq)
 
 
 -- Showing
 -- -------
 -- A custom @show@ instance for debugging purposes.
-instance (KnownDimension d, Fractional a, Show a) => Show (Mat d n n a) where
+instance (KnownDimension d, Fractional a, Show a) => Show (Mat d r c a) where
   show = (\s -> "<< " ++ s ++ " >>")
        . intercalate " >,\n < "
        . map (intercalate ", ")
@@ -45,35 +55,79 @@ instance (KnownDimension d, Fractional a, Show a) => Show (Mat d n n a) where
 -- ======================================
 
 -- | Convert ("promote") a vector to a row matrix.
+--
+-- >>> rowMatrix (_1 <:. _2)
+-- << 1.0, 2.0 >>
+--
 rowMatrix :: Vec d n a -> Mat d 1 n a
 rowMatrix (ListVec xs) = ListMat [xs]
 
 -- | Convert ("promote") a vector to a column matrix.
+--
+-- >>> colMatrix (_1 <:. _2)
+-- << 1.0 >,
+--  < 2.0 >>
+--
 colMatrix :: Vec d n a -> Mat d n 1 a
 colMatrix (ListVec xs) = ListMat (map pure xs)
 
 -- | Prepends a row to a matrix.
+--
+-- prop> consRow (rowHead m) (rowTail m) == m
+--
 consRow :: Vec d n a -> Mat d r n a -> Mat d (r+1) n a
 consRow (ListVec v) (ListMat vs) = ListMat (v:vs)
 
 -- | Prepends a column to a matrix.
+--
+-- prop> consCol (colHead m) (colTail m) == m
+--
 consCol :: Vec d n a -> Mat d n c a -> Mat d n (c+1) a
 consCol (ListVec xs) (ListMat vs) = ListMat (zipWith (:) xs vs)
 
 
 -- | Return the first row of the matrix.
+--
+-- prop> rowHead (consRow v1 m) == v1
+-- prop> rowHead m == (colHead . transpose) m
+--
+-- >>> rowHead m
+-- < 1.0, 2.0 >
+--
 rowHead :: Mat d r c a -> Vec d c a
 rowHead (ListMat vs) = ListVec (head vs)
 
 -- | Drop the first row of the matrix.
+--
+-- prop> rowTail (consRow v1 m) == m
+-- prop> (transpose . rowTail) m == (colTail . transpose) m
+--
+-- >>> rowTail m
+-- << 3.0, 4.0 >>
+--
 rowTail :: Mat d r c a -> Mat d (r-1) c a
 rowTail (ListMat vs) = ListMat (tail vs)
 
--- | Return the first row of the matrix.
+-- | Return the first column of the matrix.
+--
+-- prop> colHead (consCol v1 m) == v1
+-- prop> colHead m == (rowHead . transpose) m
+--
+-- >>> colHead m
+-- < 1.0, 3.0 >
+--
 colHead :: Mat d r c a -> Vec d r a
 colHead (ListMat vs) = ListVec (map head vs)
 
--- | Return the first row of the matrix.
+-- | Drop the first column of the matrix.
+--
+-- prop> (colTail . consCol v1) m == m
+-- prop> (transpose . colTail) m == (rowTail . transpose) m
+--
+-- >>> colTail m
+-- << 2.0 >,
+--  < 4.0 >>
+--
 colTail :: Mat d r c a -> Mat d r (c-1) a
 colTail (ListMat vs) = ListMat (map tail vs)
 
@@ -89,8 +143,13 @@ colTail (ListMat vs) = ListMat (map tail vs)
   --  [ x21 x22 x23 ]  =>  , < x21 x22 x23>
   --  [ x31 x32 x33 ]      , < x31 x32 x33> ]
   --
+  -- >>>toList (toRows m)
+  -- [< 1.0, 2.0 >,< 3.0, 4.0 >]
+  --
 newtype Rows (r :: Nat) v = Rows [v] deriving (Eq)
 
+-- |
+  -- prop> (fromRows . toRows) m == m
 toRows :: Mat d r c a -> Rows r (Vec d c a)
 toRows = coerce
 
@@ -116,8 +175,13 @@ instance Traversable (Rows r) where
   --  [ x21 x22 x23 ]  =>  , < x12 x22 x32>
   --  [ x31 x32 x33 ]      , < x13 x22 x33> ]
   --
+  -- >>>toList (toCols m)
+  -- [< 1.0, 3.0 >,< 2.0, 4.0 >]
+  --
 newtype Cols (c :: Nat) v = Cols [v] deriving (Eq)
 
+-- |
+  -- prop> (fromCols . toCols) m == m
 toCols :: forall d r c a . Mat d r c a -> Cols c (Vec d c a)
 toCols (ListMat rs) = coerce $ O.transposed rs
 
@@ -137,15 +201,20 @@ instance Traversable (Cols c) where
 
 -- Elements by row then column
 -- ---------------------------
--- | Newtype for representing a matrix as a list elements, with rows
+-- | Type for representing a matrix as a list elements, with rows
   -- having greater cardinality than columns.
   --
   --  [ x11 x12 x13 ]      [ x11 , x12 , x13
   --  [ x21 x22 x23 ]  =>  , x21 , x22 , x23
   --  [ x31 x32 x33 ]      , x31 , x32 , x33> ]
   --
+  -- >>>toList (toRowsCols m)
+  -- [1.0,2.0,3.0,4.0]
+  --
 newtype RowsCols (r :: Nat) (c :: Nat) q = RowsCols [[q]] deriving (Eq)
 
+-- |
+  -- prop> (fromRowsCols . toRowsCols) m == m
 toRowsCols :: forall d r c a . Mat d r c a -> RowsCols r c (Quantity d a)
 toRowsCols = RowsCols . map listElems . toList . toRows
 
@@ -172,8 +241,13 @@ instance Traversable (RowsCols r c) where
   --  [ x21 x22 x23 ]  =>  , x12 , x22 , x32
   --  [ x31 x32 x33 ]      , x13 , x22 , x33 ]
   --
+  -- >>>toList (toColsRows m)
+  -- [1.0,3.0,2.0,4.0]
+  --
 newtype ColsRows (r :: Nat) (c :: Nat) q = ColsRows [[q]] deriving (Eq)
 
+-- |
+  -- prop> (fromColsRows . toColsRows) m == m
 toColsRows :: forall d r c a . Mat d r c a -> ColsRows r c (Quantity d a)
 toColsRows = ColsRows . map listElems . toList . toCols
 
@@ -205,9 +279,7 @@ toColLists = map listElems . toColVecs
 -- =========
 -- | Transpose a matrix.
 --
--- Properties:
---   tranpose . transpose = id
---
+-- prop> (transpose . transpose) m == m
 transpose :: Mat d r c a -> Mat d c r a
 transpose (ListMat vs) = ListMat (O.transposed vs)
 
