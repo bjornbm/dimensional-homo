@@ -131,6 +131,8 @@ colHead (ListMat vs) = ListVec (map head vs)
 colTail :: Mat d r c a -> Mat d r (c-1) a
 colTail (ListMat vs) = ListMat (map tail vs)
 
+-- TODO snoc and last?
+
 
 -- Folding and traversing
 -- ======================
@@ -275,20 +277,12 @@ toColLists :: Mat d r c a -> [[Quantity d a]]
 toColLists = map listElems . toColVecs
 
 
--- Transpose
--- =========
--- | Transpose a matrix.
---
--- prop> (transpose . transpose) m == m
-transpose :: Mat d r c a -> Mat d c r a
-transpose (ListMat vs) = ListMat (O.transposed vs)
-
-
--- Matrix times vector
--- ===================
+-- Matrix multiplication
+-- =====================
 -- | Multiplying a matrix by a vector. What is the fancy term... project??
 matVec :: Num a => Mat d1 r c a -> Vec d2 c a -> Vec ((*) d1 d2) r a
 matVec (ListMat vs) (ListVec v) = ListVec (O.matrix_ket vs v)
+-- matVec m v = coerce $ fmap (dotProduct v) $ toRows m
 
 -- | Multiplying a vector to the left of a matrix. This is equivalent
 -- to multiplying a vector to the right of the transposed matrix.
@@ -299,9 +293,6 @@ vecMat v m = transpose m `matVec` v
 dyadicProduct :: Num a => Vec d1 r a -> Vec d2 c a -> Mat ((*) d1 d2) r c a
 v1 `dyadicProduct` v2 = colMatrix v1 `matMat` rowMatrix v2
 
-
--- Matrix times matrix
--- ===================
 -- | Multiplication of two matrices.
 matMat :: Num a => Mat d1 r n a -> Mat d2 n c a -> Mat ((*) d1 d2) r c a
 matMat (ListMat m) (ListMat m') = ListMat (O.matrix_matrix m (O.transposed m'))
@@ -310,11 +301,15 @@ matMat (ListMat m) (ListMat m') = ListMat (O.matrix_matrix m (O.transposed m'))
 -- Miscellaneous
 -- =============
 
+-- | Transpose a matrix.
+--
+-- prop> (transpose . transpose) m == m
+transpose :: Mat d r c a -> Mat d c r a
+transpose (ListMat vs) = ListMat (O.transposed vs)
+
 -- | Scale a matrix (multiply by a scalar).
 scaleMat :: (Num a) => Quantity d1 a -> Mat d2 r c a -> Mat ((*) d1 d2) r c a
 scaleMat x = coerce . map (scaleVec x) . toRowVecs
-
--- Addition and subtraction of matrices.
 
 -- | Elementwise addition of matrices.
 mElemAdd :: Num a => Mat d r c a -> Mat d r c a -> Mat d r c a

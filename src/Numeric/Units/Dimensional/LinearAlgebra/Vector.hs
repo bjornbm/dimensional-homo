@@ -146,6 +146,8 @@ vHead (ListVec xs) = coerce $ head xs
 vTail :: (1 <= n) => Vec d (n + 1) a -> Vec d n a  -- Can create empty vector.
 vTail (ListVec xs) = ListVec (tail xs)  -- vTransformUnsafe tail
 
+-- TODO snoc and last?
+
 
 -- -- Iteration
 -- -- ---------
@@ -313,16 +315,8 @@ fromListErr :: forall d n a m . (KnownNat n) => [Quantity d a] -> Vec d n a
 fromListErr = runIdentity . fromListM
 
 
-{-
-Utility functions (TODO update docs?)
-=====================================
-Note that the type signatures permit coercion. The burden of verifying
-consistency with type signature rests on user. Care must be taken
-to specify expected/desired return type explicitly to be sure
-expected results are obtained. These functions should not be exported
-outside this module!
--}
-
+-- Utility functions
+-- =================
 
 -- | Map a function to the elements
 mapElems :: (Quantity d1 a1 -> Quantity d2 a2) -> Vec d1 n a1 -> Vec d2 n a2
@@ -332,9 +326,7 @@ mapElems f = fromElems . fmap f . toElems
 forElems :: Vec d1 n a1 -> (Quantity d1 a1 -> Quantity d2 a2) -> Vec d2 n a2
 forElems = flip mapElems
 
-
--- | Zip the numeric representation of the elements using the provided
--- function. IMPORTANT: v1 v2 v3 must have the same length!
+-- | Zip the elements of two vectors using the provided function.
 zipVecsWith :: (Quantity d1 a1 -> Quantity d2 a2 -> Quantity d3 a3)
             -> Vec d1 n a1 -> Vec d2 n a2 -> Vec d3 n a3
 zipVecsWith f v1 v2 = fromListUnsafe $ zipWith f (listElems v1) (listElems v2)
