@@ -96,7 +96,7 @@ fromElems :: Elems n (Quantity d a) -> Vec d n a
 fromElems = coerce
 
 instance Foldable (Elems n) where
-  toList (Elems xs) = coerce xs
+  toList (Elems xs) = xs
   foldr f x0 = foldr f x0 . F.toList
 
 instance Functor (Elems n) where
