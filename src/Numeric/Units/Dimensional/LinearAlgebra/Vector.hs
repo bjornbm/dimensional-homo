@@ -131,8 +131,7 @@ for converting to/from HLists and tuples.
 
 -- | Create a singleton vector.
 vSing :: Quantity d a -> Vec d 1 a
--- vSing x = ListVec [x /~ siUnit]
-vSing x = coerce [x]
+vSing = ListVec . pure . coerce
 
 -- | Prepend an element to the vector.
 vCons :: Quantity d a -> Vec d n a -> Vec d (n+1) a
