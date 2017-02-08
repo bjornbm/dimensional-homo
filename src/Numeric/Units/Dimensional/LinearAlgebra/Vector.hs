@@ -199,6 +199,12 @@ class ToTupleC d n a where
   type ToTuple d n a :: *
   toTuple :: Vec d n a -> ToTuple d n a
 
+{-
+We can brute force the instances out to a reasonable degree. Presumably
+syntactic sugar loses its value if the vectors get to large as it is
+impractical to deal with them any way other than programmatically.
+-}
+
 instance ToTupleC d 2 a where
   type ToTuple d 2 a = (Quantity d a, Quantity d a)
   toTuple v = (vElemAt n0 v, vElemAt n1 v)
@@ -206,57 +212,6 @@ instance ToTupleC d 2 a where
 instance ToTupleC d 3 a where
   type ToTuple d 3 a = (Quantity d a, Quantity d a, Quantity d a)
   toTuple v = (vElemAt n0 v, vElemAt n1 v, vElemAt n2 v)
-
-
-
--- class ToTuple v where
---   type T v :: *
---   toTuple   :: v -> T v
---
--- class FromTuple t where
---   type V t :: *
---   fromTuple :: t -> V t
---
--- instance ToTuple (Vec d 2 a) where
---   type T (Vec d 2 a) = (Quantity d a, Quantity d a)
---   toTuple v = (vElemAt n0 v, vElemAt n1 v)
---
--- instance FromTuple (Quantity d a, Quantity d a) where
---   type V (Quantity d a, Quantity d a) = Vec d 2 a
---   fromTuple (x,y) = vCons x $ vSing y
-
--- instance ToTuple (Vec d 3 a) where
---   type T (Vec d 3 a) = (Quantity d a, Quantity d a, Quantity d a)
---   toTuple v = (vElemAt n0 v, vElemAt n1 v, vElemAt n2 v)
---
--- instance FromTuple (Quantity d a, Quantity d a, Quantity d a) where
---   type V (Quantity d a, Quantity d a, Quantity d a) = Vec d 3 a
---   fromTuple (x,y,z) = vCons x $ vCons y $ vSing z
-
-
-{-
-We can brute force the instances out to a reasonable degree. Presumably
-syntactic sugar loses its value if the vectors get to large as it is
-impractical to deal with them any way other than programmatically.
--}
-
--- -- |
--- --
--- -- prop> \x y -> fromTuple (x *~ meter, y *~ kilo meter) == vCons (x *~ meter) (vSing (y *~ kilo meter))
--- -- prop> \(x::Double) (y::Double) -> let t = (x *~ meter, y *~ kilo meter) in toTuple (fromTuple t) == t
--- instance VTuple (Vec d 2 a) (Quantity d a, Quantity d a) where
---   toTuple v = (vElemAt n0 v, vElemAt n1 v)
---   -- toTuple = vIterate (,)
---   fromTuple (x,y) = vCons x $ vSing y
-
--- |
---
--- -- prop> \(x::Double) (y::Double) (z::Double) -> let t = (x *~ meter, y *~ kilo meter, z *~ centi meter) in toTuple (fromTuple t) == t
--- instance VTuple (Vec d 3 a)
---                 (Quantity d a, Quantity d a, Quantity d  a) where
---   toTuple v = (vElemAt n0 v, vElemAt n1 v, vElemAt n2 v)
---   -- toTuple = vIterate (,,)
---   fromTuple (x,y,z) = vCons x $ vCons y $ vSing z
 
 n0 = Proxy :: Proxy 0
 n1 = Proxy :: Proxy 1
@@ -271,18 +226,6 @@ n2 = Proxy :: Proxy 2
 -- @HNat@s.
 vElemAt :: (KnownNat m, m + 1 <= n) => Proxy m -> Vec d n a -> Quantity d a
 vElemAt n = flip genericIndex (natVal n) . toListV
-
-
--- -- Homogenity
--- -- ==========
--- -- | This class guarantees that a vector is homogenuous w r t the
--- -- physical dimensions of its element.
--- class Homo ds d | ds -> d where
---   -- | Converts a homogeneous vector to a list.
---   toList :: Vec ds a -> [Quantity d a]
---   toList (ListVec xs) = map Dimensional xs
--- instance Homo (HSing d) d
--- instance Homo (d:*:ds) d => Homo (d:*:(d:*:ds)) d
 
 
 -- List conversions
