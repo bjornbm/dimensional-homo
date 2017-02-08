@@ -139,11 +139,11 @@ vCons :: Quantity d a -> Vec d n a -> Vec d (n+1) a
 vCons x (ListVec xs) = ListVec (coerce x:xs)
 
 -- | Return the first element of the vector.
-vHead :: Vec d (n+1) a -> Quantity d a
+vHead :: (1 <= n) => Vec d n a -> Quantity d a
 vHead (ListVec xs) = coerce $ head xs
 
 -- | Drop the first element of the vector.
-vTail :: Vec d n a -> Vec d (n-1) a  -- Can create empty vector.
+vTail :: (1 <= n) => Vec d (n + 1) a -> Vec d n a  -- Can create empty vector.
 vTail (ListVec xs) = ListVec (tail xs)  -- vTransformUnsafe tail
 
 
