@@ -83,7 +83,7 @@ instance Traversable (Cols c) where
   --
 newtype RowsCols (r :: Nat) (c :: Nat) q = RowsCols [[q]] deriving (Eq)
 toRowsCols :: forall d r c a . Mat d r c a -> RowsCols r c (Quantity d a)
-toRowsCols = RowsCols . map toListV . toList . toRows
+toRowsCols = RowsCols . map listElems . toList . toRows
 fromRowsCols :: forall d r c a . RowsCols r c (Quantity d a) -> Mat d r c a
 fromRowsCols = fromRows . coerce
 instance Foldable (RowsCols r c) where
@@ -103,7 +103,7 @@ instance Traversable (RowsCols r c) where
   --
 newtype ColsRows (r :: Nat) (c :: Nat) q = ColsRows [[q]] deriving (Eq)
 toColsRows :: forall d r c a . Mat d r c a -> ColsRows r c (Quantity d a)
-toColsRows = ColsRows . map toListV . toList . toCols
+toColsRows = ColsRows . map listElems . toList . toCols
 fromColsRows :: forall d r c a . ColsRows r c (Quantity d a) -> Mat d r c a
 fromColsRows = fromCols . coerce
 instance Foldable (ColsRows r c) where
@@ -119,9 +119,9 @@ toRowVecs = toList . toRows
 toColVecs :: Mat d r c a -> [Vec d c a]
 toColVecs = toList . toCols
 toRowLists :: Mat d r c a -> [[Quantity d a]]
-toRowLists = map toListV . toRowVecs
+toRowLists = map listElems . toRowVecs
 toColLists :: Mat d r c a -> [[Quantity d a]]
-toColLists = map toListV . toColVecs
+toColLists = map listElems . toColVecs
 
 -- Showing
 -- -------

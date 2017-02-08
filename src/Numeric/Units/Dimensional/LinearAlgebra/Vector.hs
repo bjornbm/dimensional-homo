@@ -69,6 +69,7 @@ import qualified Prelude as P
 -- $setup
 -- >>> :set -XScopedTypeVariables
 -- >>> import qualified Data.AEq
+-- >>> import Numeric.Units.Dimensional.LinearAlgebra
 -- >>> let coerceD = coerce :: Quantity d a -> a
 -- >>> let (~==) = (\x y -> coerceD x Data.AEq.~== coerceD y) :: Data.AEq.AEq a => Quantity d a -> Quantity d a -> Bool
 
@@ -107,8 +108,8 @@ instance Traversable (Elems n) where
 
 
 -- | Convert a Vec to a list.
-toListV :: Vec d n a -> [Quantity d a]
-toListV = toList . toElems
+listElems :: Vec d n a -> [Quantity d a]
+listElems = toList . toElems
 
 
 -- Showing
@@ -119,7 +120,7 @@ instance (KnownDimension d, Show (Quantity d a), Num a) => Show (Vec d n a)
   where show = (\s -> "< " ++ s ++ " >")
              . intercalate ", "
              . map show
-             . toListV
+             . listElems
 
 {-
 Vector Construction and Deconstruction
@@ -225,7 +226,7 @@ n2 = Proxy :: Proxy 2
 -- dimensional are more likely to already have NumTypes in scope than
 -- @HNat@s.
 vElemAt :: (KnownNat m, m + 1 <= n) => Proxy m -> Vec d n a -> Quantity d a
-vElemAt n = flip genericIndex (natVal n) . toListV
+vElemAt n = flip genericIndex (natVal n) . listElems
 
 
 -- List conversions
@@ -324,15 +325,19 @@ outside this module!
 
 
 -- | Map a function to the elements
-vMap :: (Quantity d1 a1 -> Quantity d2 a2) -> Vec d1 n a1 -> Vec d2 n a2
-vMap f = fromElems . fmap f . toElems
+mapElems :: (Quantity d1 a1 -> Quantity d2 a2) -> Vec d1 n a1 -> Vec d2 n a2
+mapElems f = fromElems . fmap f . toElems
+
+-- | Map a function to the elements
+forElems :: Vec d1 n a1 -> (Quantity d1 a1 -> Quantity d2 a2) -> Vec d2 n a2
+forElems = flip mapElems
 
 
 -- | Zip the numeric representation of the elements using the provided
 -- function. IMPORTANT: v1 v2 v3 must have the same length!
 vZipWith :: (Quantity d1 a1 -> Quantity d2 a2 -> Quantity d3 a3)
          -> Vec d1 n a1 -> Vec d2 n a2 -> Vec d3 n a3
-vZipWith f v1 v2 = fromListUnsafe $ zipWith f (toListV v1) (toListV v2)
+vZipWith f v1 v2 = fromListUnsafe $ zipWith f (listElems v1) (listElems v2)
 
 
 -- Elementwise binary operators
@@ -368,13 +373,25 @@ elemDiv = vZipWith (/)
 
 -- | Scale a vector by multiplication. Each element of the vector is
 --   multiplied by the first argument.
+--
+-- >>> let x1 = 4 *~ meter;  x2 = 2 *~ meter;  v1 = vCons x1 (vSing x2)
+-- >>> let y = 2 *~ second;
+-- >>> let z1 = 8 *~ (meter*second);  z2 = 4 *~ (meter*second);  v2 = vCons z1 (vSing z2)
+-- >>> scaleVec y v1 == v2
+-- True
 scaleVec :: Num a => Quantity d1 a -> Vec d2 n a -> Vec ((*) d1 d2) n a
-scaleVec x = vMap (x *)
+scaleVec = mapElems . (*)
 
 -- | Scale a vector by division. Each element of the vector is
 --   divided by the second argument.
+--
+-- >>> let x1 = 4 *~ meter;  x2 = 2 *~ meter;  v1 = vCons x1 (vSing x2)
+-- >>> let y = 2 *~ second;
+-- >>> let z1 = 2 *~ (meter/second);  z2 = 1 *~ (meter/second);  v2 = z1 <:. z2
+-- >>> scaleVecInv v1 y == v2
+-- True
 scaleVecInv :: Fractional a => Vec d1 n a -> Quantity d2 a -> Vec ((/) d1 d2) n a
-scaleVecInv v x = vMap (/ x) v
+scaleVecInv v = forElems v . flip (/)
 
 
 -- TODO Check if used and useful?
@@ -406,14 +423,17 @@ nstances...
 
 -- | Compute the cross product of two vectors.
 --
--- >>> let x1 = 1 *~ meter; x2 = 2 *~ meter; v1 = vCons x2 (vCons x1 (vSing x2))
+-- >>> let x1 = 1 *~ meter; x2 = 2 *~ meter; v1 = x2 <: x1 <:. x2
 -- >>> crossProduct v1 v1 == ListVec [0,0,0]
 -- True
 --
--- >>> let x = 1 *~ meter;  v1 = vCons x  (vCons _0 (vSing _0))
--- >>> let y = 1 *~ second; v2 = vCons _0 (vCons y  (vSing _0))
--- >>> let z = 1 *~ (meter * second); v3 = vCons _0 (vCons _0  (vSing z))
--- >>> crossProduct v1 v2 == v3
+-- >>> :{
+--   let
+--     v1 =  1 *~ meter <: _0           <:. _0
+--     v2 = _0          <:  1 *~ second <:. _0
+--     v3 = _0          <: _0           <:.  1 *~ (meter * second)
+--   in crossProduct v1 v2 == v3
+-- :}
 -- True
 crossProduct :: Num a => Vec d1 3 a -> Vec d2 3 a -> Vec ((*) d1 d2) 3 a
 crossProduct (ListVec [a, b, c]) (ListVec [d, e, f]) = ListVec
@@ -428,7 +448,7 @@ crossProduct (ListVec [a, b, c]) (ListVec [d, e, f]) = ListVec
 
 -- | Compute the sum of all elements in a homogenous vector.
 vSum :: (Num a) => Vec d n a -> Quantity d a
-vSum = sum . toListV
+vSum = sum . listElems
 
 -- coerceQ :: (KnownDimension d1, KnownDimension d2, Fractional a) => Quantity d1 a -> Quantity d2 a
 -- coerceQ x = (x /~ siUnit) *~ siUnit
@@ -470,4 +490,4 @@ vNormalize v = scaleVecInv v (vNorm v)
 
 -- | Negate a vector.
 vNegate :: (Num a) => Vec d n a -> Vec d n a
-vNegate = vMap negate
+vNegate = mapElems negate
