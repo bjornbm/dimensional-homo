@@ -30,13 +30,18 @@ import qualified Prelude as P
 -- type signatures of matrices.
 newtype Mat (d :: Dimension) (r :: Nat) (c:: Nat) a = ListMat [[a]] deriving Eq
 
-newtype M (r :: Nat) (c :: Nat) q = M [[q]]
+-- newtype M (r :: Nat) (c :: Nat) q = M [[q]]
+-- toM :: Mat d r c a -> M r c (Quantity d a)
+-- toM = coerce
+-- fromM :: M r c (Quantity d a) -> Mat d r c a
+-- fromM = coerce
 
-toM :: Mat d r c a -> M r c (Quantity d a)
-toM = coerce
-fromM :: M r c (Quantity d a) -> Mat d r c a
-fromM = coerce
-
+-- | Newtype for representing the matrix as a list of row vectors.
+  --
+  --  [ x11 x12 x13 ]      [ < x11 x12 x13>
+  --  [ x21 x22 x23 ]  =>  , < x21 x22 x23>
+  --  [ x31 x32 x33 ]      , < x31 x32 x33> ]
+  --
 newtype Rows (r :: Nat) v = Rows [v]
 toRows :: Mat d r c a -> Rows r (Vec d c a)
 toRows = coerce
@@ -50,11 +55,17 @@ instance Functor (Rows r) where
 instance Traversable (Rows r) where
   traverse f = fmap Rows . traverse f . toList
 
+-- | Newtype for representing the matrix as a list of column vectors.
+  --
+  --  [ x11 x12 x13 ]      [ < x11 x21 x31>
+  --  [ x21 x22 x23 ]  =>  , < x12 x22 x32>
+  --  [ x31 x32 x33 ]      , < x13 x22 x33> ]
+  --
 newtype Cols (c :: Nat) v = Cols [v]
 toCols :: forall d r c a . Mat d r c a -> Cols c (Vec d c a)
 toCols (ListMat rs) = coerce $ O.transposed rs
 fromCols :: forall d r c a . Cols c (Vec d c a) -> Mat d r c a
-fromCols (Cols cs) = coerce $ O.transposed (coerce cs :: [[a]])
+fromCols cs = coerce $ O.transposed (coerce cs :: [[a]])
 instance Foldable (Cols c) where
   toList = coerce
   foldr f x0 = foldr f x0 . toList
@@ -63,24 +74,54 @@ instance Functor (Cols c) where
 instance Traversable (Cols c) where
   traverse f = fmap Cols . traverse f . toList
 
-newtype RowsCols (r :: Nat) (c :: Nat) q = RowsCols [q]
+-- | Newtype for representing the matrix as a list elements, with rows
+  -- having greater cardinality than columns.
+  --
+  --  [ x11 x12 x13 ]      [ x11 , x12 , x13
+  --  [ x21 x22 x23 ]  =>  , x21 , x22 , x23
+  --  [ x31 x32 x33 ]      , x31 , x32 , x33> ]
+  --
+newtype RowsCols (r :: Nat) (c :: Nat) q = RowsCols [[q]]
 toRowsCols :: forall d r c a . Mat d r c a -> RowsCols r c (Quantity d a)
--- toRowsCols (ListMat rs) = coerce $ concat rs
-toRowsCols = RowsCols . concatMap toListV . toList . toRows
--- fromRowsCols :: forall d r c a . RowsCols r c (Vec d c a) -> Mat d r c a
--- fromRowsCols (RowsCols qs) = coerce $ O.transposed (coerce cs :: [[a]])
+toRowsCols = RowsCols . map toListV . toList . toRows
+fromRowsCols :: forall d r c a . RowsCols r c (Quantity d a) -> Mat d r c a
+fromRowsCols = fromRows . coerce
 instance Foldable (RowsCols r c) where
-  toList = coerce
+  toList = concat . (coerce :: RowsCols r c q -> [[q]])
   foldr f x0 = foldr f x0 . toList
 instance Functor (RowsCols r c) where
-  fmap f = RowsCols . fmap f . toList
+  fmap f (RowsCols rs)= RowsCols $ fmap (fmap f) rs
 instance Traversable (RowsCols r c) where
-  traverse f = fmap RowsCols . traverse f . toList
+  traverse f (RowsCols rs) = fmap RowsCols $ traverse (traverse f) rs
 
+-- | Newtype for representing the matrix as a list elements, with columns
+  -- having greater cardinality than rows.
+  --
+  --  [ x11 x12 x13 ]      [ x11 , x21 , x31
+  --  [ x21 x22 x23 ]  =>  , x12 , x22 , x32
+  --  [ x31 x32 x33 ]      , x13 , x22 , x33 ]
+  --
+newtype ColsRows (r :: Nat) (c :: Nat) q = ColsRows [[q]]
+toColsRows :: forall d r c a . Mat d r c a -> ColsRows r c (Quantity d a)
+toColsRows = ColsRows . map toListV . toList . toCols
+fromColsRows :: forall d r c a . ColsRows r c (Quantity d a) -> Mat d r c a
+fromColsRows = fromCols . coerce
+instance Foldable (ColsRows r c) where
+  toList = concat . (coerce :: ColsRows r c q -> [[q]])
+  foldr f x0 = foldr f x0 . toList
+instance Functor (ColsRows r c) where
+  fmap f (ColsRows rs)= ColsRows $ fmap (fmap f) rs
+instance Traversable (ColsRows r c) where
+  traverse f (ColsRows rs) = fmap ColsRows $ traverse (traverse f) rs
 
 toRowVecs :: Mat d r c a -> [Vec d c a]
-toRowVecs = map fromListUnsafe . coerce
+toRowVecs = toList . toRows
+toColVecs :: Mat d r c a -> [Vec d c a]
+toColVecs = toList . toCols
+toRowLists :: Mat d r c a -> [[Quantity d a]]
 toRowLists = map toListV . toRowVecs
+toColLists :: Mat d r c a -> [[Quantity d a]]
+toColLists = map toListV . toColVecs
 
 -- Showing
 -- -------
