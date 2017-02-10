@@ -451,13 +451,13 @@ norm v = coerceSafe $ sqrt $ dotProduct v v  -- O.norm
 
 -- | Normalize a vector. The vector must be homogeneous.
 --
--- >>> let m = 1 *~ meter
+-- >>> let m = 3 *~ meter
 -- >>> let v = m <:. m
 -- >>> normalize v == (_1 / norm v) `scaleVec` v
 -- True
 -- >>> normalize v == (norm v ^ neg1) `scaleVec` v
 -- True
--- >>> let m = 1 *~ meter in normalize (vSing m)
+-- >>> let m = 3 *~ meter in normalize (vSing m)
 -- < 1.0 >
 -- >>> norm (normalize v) ~== (1.0 *~ one)
 -- True
