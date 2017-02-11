@@ -43,7 +43,7 @@ newtype Mat (d :: Dimension) (r :: Nat) (c:: Nat) a = ListMat [[a]] deriving (Eq
 -- Showing
 -- -------
 -- A custom @show@ instance for debugging purposes.
-instance (KnownDimension d, Fractional a, Show a) => Show (Mat d r c a) where
+instance (KnownDimension d, Real a, Show a) => Show (Mat d r c a) where
   show = (\s -> "<< " ++ s ++ " >>")
        . intercalate " >,\n < "
        . map (intercalate ", ")
@@ -57,7 +57,7 @@ instance (KnownDimension d, Fractional a, Show a) => Show (Mat d r c a) where
 -- | Convert ("promote") a vector to a row matrix.
 --
 -- >>> rowMatrix (_1 <:. _2)
--- << 1.0, 2.0 >>
+-- << 1, 2 >>
 --
 rowMatrix :: Vec d n a -> Mat d 1 n a
 rowMatrix (ListVec xs) = ListMat [xs]
@@ -65,8 +65,8 @@ rowMatrix (ListVec xs) = ListMat [xs]
 -- | Convert ("promote") a vector to a column matrix.
 --
 -- >>> colMatrix (_1 <:. _2)
--- << 1.0 >,
---  < 2.0 >>
+-- << 1 >,
+--  < 2 >>
 --
 colMatrix :: Vec d n a -> Mat d n 1 a
 colMatrix (ListVec xs) = ListMat (map pure xs)
@@ -92,7 +92,7 @@ consCol (ListVec xs) (ListMat vs) = ListMat (zipWith (:) xs vs)
 -- prop> rowHead m == (colHead . transpose) m
 --
 -- >>> rowHead m
--- < 1.0, 2.0 >
+-- < 1, 2 >
 --
 rowHead :: Mat d r c a -> Vec d c a
 rowHead (ListMat vs) = ListVec (head vs)
@@ -103,7 +103,7 @@ rowHead (ListMat vs) = ListVec (head vs)
 -- prop> (transpose . rowTail) m == (colTail . transpose) m
 --
 -- >>> rowTail m
--- << 3.0, 4.0 >>
+-- << 3, 4 >>
 --
 rowTail :: Mat d r c a -> Mat d (r-1) c a
 rowTail (ListMat vs) = ListMat (tail vs)
@@ -114,7 +114,7 @@ rowTail (ListMat vs) = ListMat (tail vs)
 -- prop> colHead m == (rowHead . transpose) m
 --
 -- >>> colHead m
--- < 1.0, 3.0 >
+-- < 1, 3 >
 --
 colHead :: Mat d r c a -> Vec d r a
 colHead (ListMat vs) = ListVec (map head vs)
@@ -125,8 +125,8 @@ colHead (ListMat vs) = ListVec (map head vs)
 -- prop> (transpose . colTail) m == (rowTail . transpose) m
 --
 -- >>> colTail m
--- << 2.0 >,
---  < 4.0 >>
+-- << 2 >,
+--  < 4 >>
 --
 colTail :: Mat d r c a -> Mat d r (c-1) a
 colTail (ListMat vs) = ListMat (map tail vs)
@@ -146,7 +146,7 @@ colTail (ListMat vs) = ListMat (map tail vs)
   --  [ x31 x32 x33 ]      , < x31 x32 x33> ]
   --
   -- >>>toList (toRows m)
-  -- [< 1.0, 2.0 >,< 3.0, 4.0 >]
+  -- [< 1, 2 >,< 3, 4 >]
   --
 newtype Rows (r :: Nat) v = Rows [v] deriving (Eq)
 
@@ -178,7 +178,7 @@ instance Traversable (Rows r) where
   --  [ x31 x32 x33 ]      , < x13 x22 x33> ]
   --
   -- >>>toList (toCols m)
-  -- [< 1.0, 3.0 >,< 2.0, 4.0 >]
+  -- [< 1, 3 >,< 2, 4 >]
   --
 newtype Cols (c :: Nat) v = Cols [v] deriving (Eq)
 
@@ -211,7 +211,7 @@ instance Traversable (Cols c) where
   --  [ x31 x32 x33 ]      , x31 , x32 , x33> ]
   --
   -- >>>toList (toRowsCols m)
-  -- [1.0,2.0,3.0,4.0]
+  -- [1,2,3,4]
   --
 newtype RowsCols (r :: Nat) (c :: Nat) q = RowsCols [[q]] deriving (Eq)
 
@@ -244,7 +244,7 @@ instance Traversable (RowsCols r c) where
   --  [ x31 x32 x33 ]      , x13 , x22 , x33 ]
   --
   -- >>>toList (toColsRows m)
-  -- [1.0,3.0,2.0,4.0]
+  -- [1,3,2,4]
   --
 newtype ColsRows (r :: Nat) (c :: Nat) q = ColsRows [[q]] deriving (Eq)
 
