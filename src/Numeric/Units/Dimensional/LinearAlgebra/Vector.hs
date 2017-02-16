@@ -32,6 +32,7 @@ vectors/matrices.
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
@@ -54,6 +55,7 @@ module Numeric.Units.Dimensional.LinearAlgebra.Vector
 
 import Data.Foldable as F hiding (sum)
 
+import Data.AEq
 import Data.Functor.Identity
 import Data.List (intercalate, genericIndex, genericLength, genericTake)
 import Data.Proxy
@@ -82,13 +84,13 @@ import qualified Prelude as P
 -- corresponding to the elements of the list @[a]@. This will be an
 -- abstract data type with constructor functions guaranteeing this
 -- invariant.
-newtype Vec (d :: Dimension) (n :: Nat) a = ListVec [a] deriving (Eq)
+newtype Vec (d :: Dimension) (n :: Nat) a = ListVec [a] deriving (Eq, AEq)
 
 -- | `Elems` is a wrapper to provide Functor/Foldable/Traversable
   -- instances for vector.
   -- TODO `Elems` should be abstract and the only exposed interface (other than
   -- the instances) should be `toV` and `fromV`.
-newtype Elems (n::Nat) q = Elems [q] deriving (Eq)
+newtype Elems (n::Nat) q = Elems [q] deriving (Eq, AEq)
 
 toElems :: Vec d n a -> Elems n (Quantity d a)
 toElems = coerce

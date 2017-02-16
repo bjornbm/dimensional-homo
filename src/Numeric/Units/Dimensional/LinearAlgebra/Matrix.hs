@@ -1,3 +1,4 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -10,6 +11,7 @@
 
 module Numeric.Units.Dimensional.LinearAlgebra.Matrix where
 
+import Data.AEq
 import Data.Foldable
 import Data.List (intercalate)
 import Data.Proxy
@@ -37,7 +39,7 @@ import qualified Prelude as P
 -- (each row has the same number of elements). That a matrix is a list of rows as
 -- opposed to a list of columns is an implementation detail that we try to not leak
 -- through the API.
-newtype Mat (d :: Dimension) (r :: Nat) (c:: Nat) a = ListMat [[a]] deriving (Eq)
+newtype Mat (d :: Dimension) (r :: Nat) (c:: Nat) a = ListMat [[a]] deriving (Eq, AEq)
 
 
 -- Showing
@@ -148,7 +150,7 @@ colTail (ListMat vs) = ListMat (map tail vs)
   -- >>>toList (toRows m)
   -- [< 1, 2 >,< 3, 4 >]
   --
-newtype Rows (r :: Nat) v = Rows [v] deriving (Eq)
+newtype Rows (r :: Nat) v = Rows [v] deriving (Eq, AEq)
 
 -- |
   -- prop> (fromRows . toRows) m == m
@@ -180,7 +182,7 @@ instance Traversable (Rows r) where
   -- >>>toList (toCols m)
   -- [< 1, 3 >,< 2, 4 >]
   --
-newtype Cols (c :: Nat) v = Cols [v] deriving (Eq)
+newtype Cols (c :: Nat) v = Cols [v] deriving (Eq, AEq)
 
 -- |
   -- prop> (fromCols . toCols) m == m
@@ -213,7 +215,7 @@ instance Traversable (Cols c) where
   -- >>>toList (toRowsCols m)
   -- [1,2,3,4]
   --
-newtype RowsCols (r :: Nat) (c :: Nat) q = RowsCols [[q]] deriving (Eq)
+newtype RowsCols (r :: Nat) (c :: Nat) q = RowsCols [[q]] deriving (Eq, AEq)
 
 -- |
   -- prop> (fromRowsCols . toRowsCols) m == m
@@ -246,7 +248,7 @@ instance Traversable (RowsCols r c) where
   -- >>>toList (toColsRows m)
   -- [1,3,2,4]
   --
-newtype ColsRows (r :: Nat) (c :: Nat) q = ColsRows [[q]] deriving (Eq)
+newtype ColsRows (r :: Nat) (c :: Nat) q = ColsRows [[q]] deriving (Eq, AEq)
 
 -- |
   -- prop> (fromColsRows . toColsRows) m == m
