@@ -96,13 +96,16 @@ toElems = coerce
 fromElems :: Elems n (Quantity d a) -> Vec d n a
 fromElems = coerce
 
+-- Derive automatically? TODO Write tests first?
 instance Foldable (Elems n) where
   toList (Elems xs) = xs
   foldr f x0 = foldr f x0 . F.toList
 
+-- Derive automatically? TODO Write tests first?
 instance Functor (Elems n) where
   fmap f = Elems . fmap f . toList
 
+-- Derive automatically? TODO Write tests first?
 instance Traversable (Elems n) where
   traverse f = fmap Elems . traverse f . toList
 

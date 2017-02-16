@@ -256,13 +256,16 @@ toColsRows = ColsRows . map listElems . toList . toCols
 fromColsRows :: forall d r c a . ColsRows r c (Quantity d a) -> Mat d r c a
 fromColsRows = fromCols . coerce
 
+-- Derive automatically? TODO write tests first!
 instance Foldable (ColsRows r c) where
   toList = concat . (coerce :: ColsRows r c q -> [[q]])
   foldr f x0 = foldr f x0 . toList
 
+-- Derive automatically? TODO write tests first!
 instance Functor (ColsRows r c) where
   fmap f (ColsRows rs)= ColsRows $ fmap (fmap f) rs
 
+-- Derive automatically? TODO write tests first!
 instance Traversable (ColsRows r c) where
   traverse f (ColsRows rs) = fmap ColsRows $ traverse (traverse f) rs
 
