@@ -44,6 +44,7 @@ vectors/matrices.
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE NoStarIsType #-}
 
 module Numeric.Units.Dimensional.LinearAlgebra.Vector
   {- ( Vec
@@ -57,6 +58,7 @@ import Data.Foldable as F hiding (sum)
 
 import Data.AEq
 import Data.Functor.Identity
+import Data.Kind
 import Data.List (intercalate, genericIndex, genericLength, genericTake)
 import Data.Proxy
 import Numeric.NumType.DK.Integers (TypeInt (Neg1, Pos2))
@@ -192,7 +194,7 @@ vTail (ListVec xs) = ListVec (tail xs)  -- vTransformUnsafe tail
 -- prop> \(x::Double) (y::Double) -> let t = (x *~ meter, y *~ kilo meter) in toTuple (fromTuple t) == t
 -- prop> \(x::Double) (y::Double) (z::Double) -> let t = (x *~ meter, y *~ kilo meter, z *~ centi meter) in toTuple (fromTuple t) == t
 class FromTupleC t where
-  type FromTuple t :: *
+  type FromTuple t :: Type
   fromTuple :: t -> FromTuple t
 
 instance FromTupleC (Quantity d a, Quantity d a) where
@@ -204,7 +206,7 @@ instance FromTupleC (Quantity d a, Quantity d a, Quantity d a) where
   fromTuple (x,y,z) = vCons x $ vCons y $ vSing z
 
 class ToTupleC d n a where
-  type ToTuple d n a :: *
+  type ToTuple d n a :: Type
   toTuple :: Vec d n a -> ToTuple d n a
 
 {-
