@@ -260,7 +260,7 @@ fromListUnsafe = coerce
 --
 -- >>> let x = 1 *~ meter
 -- >>> fromListPad x [] `asTypeOf` (x <:. x)
--- < 1 m, 1 m >
+-- < 1 m, 1 m >
 fromListPad :: forall d n a . KnownNat n
             => Quantity d a -> [Quantity d a] -> Vec d n a
 fromListPad x xs = fromListUnsafe $ genericTake n $ xs ++ repeat x
@@ -273,15 +273,15 @@ fromListPad x xs = fromListUnsafe $ genericTake n $ xs ++ repeat x
 --
 -- >>> let x = 1 *~ meter
 -- >>> fromListZero [x] `asTypeOf` vSing x
--- < 1 m >
+-- < 1 m >
 -- >>> fromListZero [x,x] `asTypeOf` (x <:. x)
--- < 1 m, 1 m >
+-- < 1 m, 1 m >
 -- >>> fromListZero [x] `asTypeOf` (x <:. x)
--- < 1 m, 0 m >
+-- < 1 m, 0 m >
 -- >>> fromListZero [x,x] `asTypeOf` vSing x
--- < 1 m >
+-- < 1 m >
 -- >>> fromListZero [] `asTypeOf` (x <:. x)
--- < 0 m, 0 m >
+-- < 0 m, 0 m >
 fromListZero :: (KnownNat n, Num a) => [Quantity d a] -> Vec d n a
 fromListZero = fromListPad _0
 
@@ -289,9 +289,9 @@ fromListZero = fromListPad _0
 --   the list is not of the expected length.
 -- >>> let x = 1 *~ meter
 -- >>> fromListM [x] `asTypeOf` Just (vSing x)
--- Just < 1 m >
+-- Just < 1 m >
 -- >>> fromListM [x,x] `asTypeOf` Just (x <:. x)
--- Just < 1 m, 1 m >
+-- Just < 1 m, 1 m >
 -- >>> fromListM [x] `asTypeOf` Just (x  <:. x)
 -- Nothing
 -- >>> fromListM [x,x] `asTypeOf` Just (vSing x)
@@ -311,9 +311,9 @@ fromListM xs | len == n  = return $ fromListUnsafe xs
 --
 -- >>> let x = 1 *~ meter
 -- >>> fromListErr [x] `asTypeOf` vSing x
--- < 1 m >
+-- < 1 m >
 -- >>> fromListErr [x,x] `asTypeOf` (x  <:. x)
--- < 1 m, 1 m >
+-- < 1 m, 1 m >
 -- >>> fromListErr [x] `asTypeOf` (x  <:. x)
 -- < *** Exception: List length (1) does not equal expected vector size (2)
 -- >>> fromListErr [x,x] `asTypeOf` vSing x
