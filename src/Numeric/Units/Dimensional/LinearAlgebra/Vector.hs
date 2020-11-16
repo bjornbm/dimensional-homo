@@ -56,6 +56,7 @@ module Numeric.Units.Dimensional.LinearAlgebra.Vector
 
 import Data.Foldable as F hiding (sum)
 
+import qualified Control.Monad.Fail as Fail
 import Data.AEq
 import Data.Functor.Identity
 import Data.Kind
@@ -285,8 +286,22 @@ fromListPad x xs = fromListUnsafe $ genericTake n $ xs ++ repeat x
 fromListZero :: (KnownNat n, Num a) => [Quantity d a] -> Vec d n a
 fromListZero = fromListPad _0
 
+-- | Create a Vec from a list. Fails with @Left errmsg@ is
+--   the list is not of the expected length.
+fromListEither :: forall d n a . KnownNat n
+          => [Quantity d a] -> Either String (Vec d n a)
+fromListEither xs | len == n  = return $ fromListUnsafe xs
+             | otherwise = Left msg
+  where
+    n   = natVal (Proxy :: Proxy n)
+    len = genericLength xs
+    msg = "List length (" ++ show len ++
+          ") does not equal expected vector size (" ++ show n ++ ")"
+
+
 -- | Creata a Vec from a list in a monad (for example @Maybe@). Fails if
 --   the list is not of the expected length.
+--
 -- >>> let x = 1 *~ meter
 -- >>> fromListM [x] `asTypeOf` Just (vSing x)
 -- Just < 1 m >
@@ -296,15 +311,10 @@ fromListZero = fromListPad _0
 -- Nothing
 -- >>> fromListM [x,x] `asTypeOf` Just (vSing x)
 -- Nothing
-fromListM :: forall d n a m . (Monad m, KnownNat n)
+fromListM :: forall d n a m . (Fail.MonadFail m, KnownNat n)
           => [Quantity d a] -> m (Vec d n a)
-fromListM xs | len == n  = return $ fromListUnsafe xs
-             | otherwise = fail msg
-  where
-    n   = natVal (Proxy :: Proxy n)
-    len = genericLength xs
-    msg = "List length (" ++ show len ++
-          ") does not equal expected vector size (" ++ show n ++ ")"
+fromListM = either Fail.fail return . fromListEither
+
 
 -- | Creata a Vec from a list. Throws an exception if the list not of the
 --   expected length.
@@ -316,10 +326,14 @@ fromListM xs | len == n  = return $ fromListUnsafe xs
 -- < 1 m, 1 m >
 -- >>> fromListErr [x] `asTypeOf` (x  <:. x)
 -- < *** Exception: List length (1) does not equal expected vector size (2)
+-- ...
 -- >>> fromListErr [x,x] `asTypeOf` vSing x
 -- < *** Exception: List length (2) does not equal expected vector size (1)
+-- ...
 fromListErr :: forall d n a m . (KnownNat n) => [Quantity d a] -> Vec d n a
-fromListErr = runIdentity . fromListM
+fromListErr xs = case fromListEither xs of
+    Left msg -> error msg
+    Right v  -> v
 
 
 -- Utility functions
