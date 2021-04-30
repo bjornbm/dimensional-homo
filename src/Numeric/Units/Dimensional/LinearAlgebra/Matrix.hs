@@ -27,10 +27,8 @@ import qualified Prelude as P
 
 -- $setup
 -- >>> :set -XScopedTypeVariables
--- >>> import qualified Data.AEq
+-- >>> import Data.AEq
 -- >>> import Numeric.Units.Dimensional.LinearAlgebra.Operators
--- >>> let coerceD = coerce :: Quantity d a -> a
--- >>> let (~==) = (\x y -> coerceD x Data.AEq.~== coerceD y) :: Data.AEq.AEq a => Quantity d a -> Quantity d a -> Bool
 -- >>> let v1 = _1 <:. _2
 -- >>> let v2 = _3 <:. _4
 -- >>> let m  = v1 |:. v2

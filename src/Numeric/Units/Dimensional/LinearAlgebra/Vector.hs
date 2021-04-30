@@ -67,11 +67,9 @@ import qualified Prelude as P
 
 
 -- $setup
--- >>> :set -XScopedTypeVariables
--- >>> import qualified Data.AEq
+-- >>> :set -XDataKinds
+-- >>> import Data.AEq
 -- >>> import Numeric.Units.Dimensional.LinearAlgebra
--- >>> let coerceD = coerce :: Quantity d a -> a
--- >>> let (~==) = (\x y -> coerceD x Data.AEq.~== coerceD y) :: Data.AEq.AEq a => Quantity d a -> Quantity d a -> Bool
 
 
 -- Vector data type
@@ -493,5 +491,7 @@ negateVec :: (Num a) => Vec d n a -> Vec d n a
 negateVec = mapElems negate
 
 -- | The vector with all elements equal to zero.
+-- >>> nullVector :: Vec DOne 3 Int
+-- < 0, 0, 0 >
 nullVector :: (KnownNat n, Num a) => Vec d n a
 nullVector = fromListZero []
