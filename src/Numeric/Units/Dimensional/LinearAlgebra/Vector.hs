@@ -33,15 +33,12 @@ vectors/matrices.
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE NoStarIsType #-}
@@ -56,9 +53,7 @@ module Numeric.Units.Dimensional.LinearAlgebra.Vector
 
 import Data.Foldable as F hiding (sum)
 
-import qualified Control.Monad.Fail as Fail
 import Data.AEq
-import Data.Functor.Identity
 import Data.Kind
 import Data.List (intercalate, genericIndex, genericLength, genericTake)
 import Data.Proxy
@@ -288,6 +283,16 @@ fromListZero = fromListPad _0
 
 -- | Create a Vec from a list. Fails with @Left errmsg@ is
 --   the list is not of the expected length.
+--
+-- >>> let x = 1 *~ meter
+-- >>> fromListEither [x] `asTypeOf` Right (vSing x)
+-- Right < 1 m >
+-- >>> fromListEither [x,x] `asTypeOf` Right (x <:. x)
+-- Right < 1 m, 1 m >
+-- >>> fromListEither [x] `asTypeOf` Right (x  <:. x)
+-- Left "List length (1) does not equal expected vector size (2)"
+-- >>> fromListEither [x,x] `asTypeOf` Right (vSing x)
+-- Left "List length (2) does not equal expected vector size (1)"
 fromListEither :: forall d n a . KnownNat n
           => [Quantity d a] -> Either String (Vec d n a)
 fromListEither xs | len == n  = return $ fromListUnsafe xs
@@ -311,9 +316,9 @@ fromListEither xs | len == n  = return $ fromListUnsafe xs
 -- Nothing
 -- >>> fromListM [x,x] `asTypeOf` Just (vSing x)
 -- Nothing
-fromListM :: forall d n a m . (Fail.MonadFail m, KnownNat n)
+fromListM :: forall d n a m . (MonadFail m, KnownNat n)
           => [Quantity d a] -> m (Vec d n a)
-fromListM = either Fail.fail return . fromListEither
+fromListM = either fail return . fromListEither
 
 
 -- | Creata a Vec from a list. Throws an exception if the list not of the
@@ -331,9 +336,7 @@ fromListM = either Fail.fail return . fromListEither
 -- < *** Exception: List length (2) does not equal expected vector size (1)
 -- ...
 fromListErr :: forall d n a m . (KnownNat n) => [Quantity d a] -> Vec d n a
-fromListErr xs = case fromListEither xs of
-    Left msg -> error msg
-    Right v  -> v
+fromListErr = either error id . fromListEither
 
 
 -- Utility functions
