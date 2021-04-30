@@ -491,3 +491,7 @@ normalize v = scaleVecInv v (norm v)
 -- | Negate a vector.
 negateVec :: (Num a) => Vec d n a -> Vec d n a
 negateVec = mapElems negate
+
+-- | The vector with all elements equal to zero.
+nullVector :: (KnownNat n, Num a) => Vec d n a
+nullVector = fromListZero []
